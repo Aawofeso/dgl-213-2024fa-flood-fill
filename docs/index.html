@@ -1,48 +1,65 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Flood Fill</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Flood Fill</title>
-  <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
-</head>
+  <body>
+    <header>
+      <h1>Flood Fill</h1>
+      <p>A DGL 213 Game</p>
+    </header>
 
-<body>
-  <header>
-    <h1>Flood Fill</h1>
-    <p>A DGL 213 Game</p>
-  </header>
+    <main>
+      <h2>How to play</h2>
+      <p>
+        <strong>Goal: </strong>Make all cells on the grid/board the same color.
+      </p>
+      <ul>
+        <li>
+          Choose a color by clicking on one of the labeled buttons at bottom of
+          the grid.
+        </li>
+        <li>Click on a cell to change its color to the selected color.</li>
+        <li>
+          All neighbouring cells of the clicked-on cell's color will be changed
+          to the selected color.
+        </li>
+      </ul>
 
-  <main>
-    <h2>How to play</h2>
-    <p><strong>Goal: </strong>Make all cells on the grid/board the 
-      same color.</p>
-    <ul>
-      <li>Choose a color by clicking on one of the labeled buttons 
-        at bottom of the grid.</li>
-      <li>Click on a cell to change its color to the selected 
-        color.</li>
-      <li>All neighbouring cells of the clicked-on cell's color 
-        will be changed to the selected color.</li>
-    </ul>
-    <div>
-      <canvas width="600" height="400"></canvas>
-    </div>
-    <div>
-      <button id="restart">Restart</button>
-      <button name="red" class="color-select">Red</button>
-      <button name="green" class="color-select">Green</button>
-      <button name="blue" class="color-select">Blue</button>
-      <button name="white" class="color-select">White</button>
-      <button name="black" class="color-select">Black</button>
-    </div>
-  </main>
+      <!-- Game Grid and UI -->
+      <div>
+        <canvas width="600" height="400"></canvas>
+      </div>
+      <div>
+        <button id="restart">Restart</button>
+        <button name="red" class="color-select">Red</button>
+        <button name="green" class="color-select">Green</button>
+        <button name="blue" class="color-select">Blue</button>
+        <button name="white" class="color-select">White</button>
+        <button name="black" class="color-select">Black</button>
+      </div>
 
-  <footer>
-    <p>Flood Fill - A DGL 213 Game</p>
-  </footer>
-  <script src="floodfill.js"></script>
-</body>
+      <!-- Game Stats -->
+      <div id="game-stats">
+        <p id="player-score">Score: 500</p>
+        <p id="move-counter">Moves: 0</p>
+        <button id="undo-btn">Undo (3 left)</button>
+        <button id="transpose-btn">Transpose Grid</button>
+      </div>
 
+      <!-- Leaderboard -->
+      <h2>Leaderboard</h2>
+      <div id="leaderboard"></div>
+    </main>
+
+    <footer>
+      <p>Flood Fill - A DGL 213 Game</p>
+    </footer>
+
+    <script src="floodfill.js"></script>
+  </body>
 </html>

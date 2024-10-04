@@ -3,9 +3,6 @@
 (() => {
   window.addEventListener("load", (event) => {
 
-    // *****************************************************************************
-    // #region Constants and Variables
-
     // Canvas references
     const canvas = document.querySelector("canvas");
     const ctx = canvas.getContext("2d");
@@ -13,6 +10,8 @@
     // UI references
     const restartButton = document.querySelector("#restart");
     const colorSelectButtons = document.querySelectorAll(".color-select");
+    const undoButton = document.getElementById('undo-btn');
+    const transposeButton = document.getElementById('transpose-btn');
 
     // Constants
     const CELL_COLORS = {
@@ -29,12 +28,15 @@
     // Game objects
     let replacementColor = CELL_COLORS.white;
     let grids = [];
+    let playerScore = 500;
+    let moveCount = 0;
+    let undoCount = 3;
+    let timerInterval = null;
+    let timeCounter = 0;
+    let leaderboard = [];
 
-    // #endregion
-
-
-    // *****************************************************************************
-    // #region Game Logic
+    // Start the game
+    startGame();
 
     function startGame(startingGrid = []) {
       if (startingGrid.length === 0) {
@@ -42,8 +44,16 @@
       }
       initializeHistory(startingGrid);
       render(grids[0]);
+      playerScore = 500;
+      moveCount = 0;
+      undoCount = 3;
+      updateScoreDisplay();
+      updateMoveCounter();
+      updateUndoButton();
+      startTimer();
     }
 
+    // Initialize the grid
     function initializeGrid() {
       const newGrid = [];
       for (let i = 0; i < CELLS_PER_AXIS * CELLS_PER_AXIS; i++) {
@@ -52,11 +62,13 @@
       return newGrid;
     }
 
+    // Initialize game history
     function initializeHistory(startingGrid) {
       grids = [];
       grids.push(startingGrid);
     }
 
+    // Render the grid
     function render(grid) {
       for (let i = 0; i < grid.length; i++) {
         ctx.fillStyle = `rgb(${grid[i][0]}, ${grid[i][1]}, ${grid[i][2]})`;
@@ -64,17 +76,22 @@
       }
     }
 
+    // Update the grid at a specific cell
     function updateGridAt(mousePositionX, mousePositionY) {
       const gridCoordinates = convertCartesiansToGrid(mousePositionX, mousePositionY);
       const newGrid = grids[grids.length - 1].slice(); //Makes a copy of the most recent grid state
-      floodFill(newGrid, gridCoordinates, newGrid[gridCoordinates.row * CELLS_PER_AXIS + gridCoordinates.column])
+      floodFill(newGrid, gridCoordinates, newGrid[gridCoordinates.row * CELLS_PER_AXIS + gridCoordinates.column]);
       grids.push(newGrid);
       render(grids[grids.length - 1]);
+      moveCount++;  // Increment move count
+      updateMoveCounter();
+      checkIfGameWon();
     }
 
+    // Flood fill algorithm
     function floodFill(grid, gridCoordinate, colorToChange) {
-      if (arraysAreEqual(colorToChange, replacementColor)) { return } //The current cell is already the selected color
-      else if (!arraysAreEqual(grid[gridCoordinate.row * CELLS_PER_AXIS + gridCoordinate.column], colorToChange)) { return }  //The current cell is a different color than the initially clicked-on cell
+      if (arraysAreEqual(colorToChange, replacementColor)) { return } 
+      else if (!arraysAreEqual(grid[gridCoordinate.row * CELLS_PER_AXIS + gridCoordinate.column], colorToChange)) { return } 
       else {
         grid[gridCoordinate.row * CELLS_PER_AXIS + gridCoordinate.column] = replacementColor;
         floodFill(grid, { column: Math.max(gridCoordinate.column - 1, 0), row: gridCoordinate.row }, colorToChange);
@@ -85,16 +102,90 @@
       return
     }
 
+    // Restart the game
     function restart() {
       startGame(grids[0]);
     }
 
-    // #endregion
+    // Time-based scoring system
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        if (playerScore > 0) {
+          playerScore--;  // Decrease score by 1 every second
+        }
+        timeCounter++;  // Increment time counter
+        updateScoreDisplay();
+      }, 1000);
+    }
 
+    function stopTimer() {
+      clearInterval(timerInterval);  // Stop the timer
+    }
 
-    // *****************************************************************************
-    // #region Event Listeners
+    // Check if the game is won
+    function checkIfGameWon() {
+      const firstColor = grids[grids.length - 1][0];
+      const allSameColor = grids[grids.length - 1].every(color => arraysAreEqual(color, firstColor));
+      if (allSameColor) {
+        stopTimer();
+        alert(`You won! Final Score: ${playerScore}`);
+        updateLeaderboard(playerScore);  // Update leaderboard with final score
+      }
+    }
 
+    // Leaderboard functionality
+    function updateLeaderboard(score) {
+      leaderboard.push(score);
+      leaderboard.sort((a, b) => b - a);  // Sort scores from highest to lowest
+      if (leaderboard.length > 5) leaderboard.pop();  // Keep top 5 scores
+      displayLeaderboard();
+    }
+
+    function displayLeaderboard() {
+      const leaderboardElement = document.getElementById('leaderboard');
+      leaderboardElement.innerHTML = leaderboard.map((score, index) => `<p>${index + 1}. ${score}</p>`).join('');
+    }
+
+    // Update game stats display
+    function updateScoreDisplay() {
+      document.getElementById('player-score').innerText = `Score: ${playerScore}`;
+    }
+
+    function updateMoveCounter() {
+      document.getElementById('move-counter').innerText = `Moves: ${moveCount}`;
+    }
+
+    function updateUndoButton() {
+      undoButton.innerText = `Undo (${undoCount} left)`;
+    }
+
+    // Limited undo functionality
+    function undoLastMove() {
+      if (undoCount > 0 && grids.length > 1) {
+        grids.pop();  // Remove the most recent grid state
+        undoCount--;
+        render(grids[grids.length - 1]);  // Re-render the previous state
+        updateUndoButton();
+      } else {
+        alert("No undos left!");
+      }
+    }
+
+    // Transpose grid functionality (Bonus)
+    function transposeGrid() {
+      const newGrid = grids[grids.length - 1].slice();  // Copy the current grid state
+      const size = CELLS_PER_AXIS;
+      for (let i = 0; i < size; i++) {
+        for (let j = i + 1; j < size; j++) {
+          // Swap elements across the main diagonal
+          [newGrid[i * size + j], newGrid[j * size + i]] = [newGrid[j * size + i], newGrid[i * size + j]];
+        }
+      }
+      grids.push(newGrid);  // Save the transposed grid
+      render(newGrid);  // Render the transposed grid
+    }
+
+    // Event Listeners
     canvas.addEventListener("mousedown", gridClickHandler);
     function gridClickHandler(event) {
       updateGridAt(event.offsetX, event.offsetY);
@@ -106,16 +197,13 @@
     }
 
     colorSelectButtons.forEach(button => {
-      button.addEventListener("mousedown", () => replacementColor = CELL_COLORS[button.name])
+      button.addEventListener("mousedown", () => replacementColor = CELL_COLORS[button.name]);
     });
 
-    // #endregion
+    undoButton.addEventListener('click', undoLastMove);
+    transposeButton.addEventListener('click', transposeGrid);
 
-
-    // *****************************************************************************
-    // #region Helper Functions
-
-    // To convert canvas coordinates to grid coordinates
+    // Helper Functions
     function convertCartesiansToGrid(xPos, yPos) {
       return {
         column: Math.floor(xPos / CELL_WIDTH),
@@ -123,13 +211,11 @@
       };
     }
 
-    // To choose a random property from a given object
     function chooseRandomPropertyFrom(object) {
       const keys = Object.keys(object);
       return object[keys[Math.floor(keys.length * Math.random())]]; //Truncates to integer
     };
 
-    // To compare two arrays
     function arraysAreEqual(arr1, arr2) {
       if (arr1.length != arr2.length) { return false }
       else {
@@ -142,12 +228,5 @@
       }
     }
 
-    // #endregion
-
-    //Start game
-    startGame();
-
-
   });
 })();
-
